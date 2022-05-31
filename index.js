@@ -1,44 +1,28 @@
 // necessary modules
 const { ApolloServer, gql } = require('apollo-server');
+var mysql = require('mysql2');
 
 // dummy link:
 // https://cdn.pixabay.com/photo/2015/04/23/22/00/tree-736885_960_720.jpg
 
-dummyLink = 'https://cdn.pixabay.com/photo/2015/04/23/22/00/tree-736885_960_720.jpg';
+var connection = mysql.createConnection({
+    host: 'localhost',
+    user: 'root',
+    password: 'Ab123456#',
+    database: 'api_demo'
+});
 
-// my data
-const users = [
-    {
-      id: 1,
-      userName: 'Abhishek Sharma',
-      userBio: 'ash bio',
-      link: 'https://cdn.pixabay.com/photo/2015/04/23/22/00/tree-736885_960_720.jpg',
-    },
-    {
-      id: 2,
-      userName: 'Pratik Shukla',
-      userBio: 'ps bio',
-      link: 'https://cdn.pixabay.com/photo/2015/04/23/22/00/tree-736885_960_720.jpg',
-    },
-    {
-        id: 3,
-        userName: 'Adarsh Sharma',
-        userBio: 'as bio',
-        link: 'https://cdn.pixabay.com/photo/2015/04/23/22/00/tree-736885_960_720.jpg',
-    },
-    {
-        id: 4,
-        userName: "Lovish Dua",
-        userBio: 'ld bio',
-        link: 'https://cdn.pixabay.com/photo/2015/04/23/22/00/tree-736885_960_720.jpg',
-    },
-    {
-        id: 5,
-        userName: "Prashant Chandel",
-        userBio: 'pc bio',
-        link: 'https://cdn.pixabay.com/photo/2015/04/23/22/00/tree-736885_960_720.jpg',
-    }
-];
+connection.connect();
+let users = {};
+
+connection.query('SELECT * from users', function (error, results, fields) {
+  if (error) throw error;
+  users = results;
+});
+
+connection.end();
+
+// module.exports = db;
 
 // basic layout
 const typeDefs = gql`
@@ -117,6 +101,4 @@ const server = new ApolloServer({
 server.listen().then(({ url }) => {
     console.log(`🚀  Server ready at ${url}`);
 });
-
-
 
