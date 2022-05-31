@@ -13,16 +13,7 @@ var connection = mysql.createConnection({
 });
 
 connection.connect();
-let users = {};
 
-connection.query('SELECT * from users', function (error, results, fields) {
-  if (error) throw error;
-  users = results;
-});
-
-connection.end();
-
-// module.exports = db;
 
 // basic layout
 const typeDefs = gql`
@@ -39,53 +30,57 @@ const typeDefs = gql`
     }
 
     type Mutation {
-        addUser(userName: String, userBio: String): User
         addProfilePicture(id: Int, link: String): User
     }
 `;
 
 
+// a function to get the user from database by id
+async function getUser(id) {
+    const getQuery = "select * from users where id = " + id.toString();
+    let result = await new Promise((resolve, reject) => {
+        connection.query(getQuery, function (error, results, fields) {
+            if (error) throw error;
+            resolve(results);
+        });
+    });
+
+    return result[0];
+}
+
 // A function that will update the link of user with id = id
-function updateLink(users, id, link) {
-    let idx = -1;
-    for(let i = 0; i < users.length; i++) {
-        if (users[i].id === id) {
-            users[i].link = link;
-            idx = i;
-            break;
+async function updateLink(id, link) {
+    const updateQuery = "update users set link = '" + link.toString() + "' where id =" + id.toString();
+    let result = await new Promise((resolve, reject) => {
+            connection.query(updateQuery, function (error, results, fields) {
+                if (error) throw error;
+                resolve(results);
+            });
         }
-    }
-    return users[idx];
+    )
+    console.log("result =", result);
+    return getUser(id);
+}
+
+
+async function getAllUsers() {
+    let result = await new Promise((resolve, reject) => {
+        connection.query("SELECT * FROM users", function (error, results, fields) {
+            if (error) throw error;
+            resolve(results)
+        })
+    })
+    return result;
 }
 
 // functions which determine how data is returned
 const resolvers = {
     Query: {
-        users: () => users,
-        getUserDetails: (root, args, context) => {
-            return users.find(user => user.id === args.id);
-        }
+        users: () => getAllUsers(),
+        getUserDetails: async (root, args, context) => getUser(args.id),
     },
     Mutation: {
-        addUser: async (root, args, context) => {
-            const { userName, userBio, link } = args;
-            users.push({
-                id: users.length + 1,
-                userName: userName,
-                userBio: userBio,
-                link: link,
-            })
-            return {
-                userName,
-                userBio,
-                link,
-            }
-        },
-        addProfilePicture: async (root, args, context) => {
-            const { id, link } = args;
-            const user = updateLink(users, id, link);
-            return user;
-        }
+        addProfilePicture: async (root, args, context) => updateLink(args.id, args.link),
     }
 }
 
